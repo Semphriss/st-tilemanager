@@ -53,18 +53,19 @@ TileMaskSelector::get_col(short mask)
 TileMaskSelector::TileMaskSelector(Window& window) :
   Scene(window),
   m_current_tile(0),
-  m_btn_next_tile("Next tile", [this](int){ next_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_prev_tile("Prev. tile", [this](int){ prev_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_next_tile("Next tile", [this](int){ next_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_go_back("Go back", [this](int){ change_scene(std::make_unique<TileSelector>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TilePairings>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
+  m_btn_prev_tile.set_disabled(true);
   resize_elements();
 }
 
 void
 TileMaskSelector::event(const SDL_Event& event)
 {
-  if (m_btn_next_tile.event(event) || m_btn_prev_tile.event(event) || m_btn_go_back.event(event) || m_btn_next_step.event(event))
+  if (m_btn_prev_tile.event(event) || m_btn_next_tile.event(event) || m_btn_go_back.event(event) || m_btn_next_step.event(event))
     return;
 
   switch (event.type)
@@ -113,8 +114,8 @@ TileMaskSelector::draw() const
 {
   auto& r = m_window.get_renderer();
   DrawingContext dc(r);
-  m_btn_next_tile.draw(dc);
   m_btn_prev_tile.draw(dc);
+  m_btn_next_tile.draw(dc);
   m_btn_go_back.draw(dc);
   m_btn_next_step.draw(dc);
   dc.draw_text("red = empty       green = solid       blue = non-solid", Vector(r.get_window().get_size().w / 2.f, 8.f), Renderer::TextAlign::TOP_MID, "../data/fonts/SuperTux-Medium.ttf", 14, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 10);
@@ -159,8 +160,8 @@ TileMaskSelector::prev_tile()
 void
 TileMaskSelector::resize_elements()
 {
-  m_btn_next_tile.get_rect() = Rect(0.f, m_window.get_size().h - 32.f, m_window.get_size().w / 4.f, m_window.get_size().h);
-  m_btn_prev_tile.get_rect() = Rect(m_window.get_size().w / 4.f, m_window.get_size().h - 32.f, m_window.get_size().w / 2.f, m_window.get_size().h);
+  m_btn_prev_tile.get_rect() = Rect(0.f, m_window.get_size().h - 32.f, m_window.get_size().w / 4.f, m_window.get_size().h);
+  m_btn_next_tile.get_rect() = Rect(m_window.get_size().w / 4.f, m_window.get_size().h - 32.f, m_window.get_size().w / 2.f, m_window.get_size().h);
   m_btn_go_back.get_rect() = Rect(m_window.get_size().w / 2.f, m_window.get_size().h - 32.f, m_window.get_size().w * 3.f / 4.f, m_window.get_size().h);
   m_btn_next_step.get_rect() = Rect(m_window.get_size().w * 3.f / 4.f, m_window.get_size().h - 32.f, m_window.get_size().w, m_window.get_size().h);
 }

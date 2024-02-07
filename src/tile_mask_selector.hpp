@@ -51,8 +51,8 @@ private:
 
 private:
   int m_current_tile;
-  ButtonLabel m_btn_next_tile;
   ButtonLabel m_btn_prev_tile;
+  ButtonLabel m_btn_next_tile;
   ButtonLabel m_btn_go_back;
   ButtonLabel m_btn_next_step;
 
