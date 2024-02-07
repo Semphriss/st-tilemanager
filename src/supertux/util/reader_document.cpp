@@ -38,14 +38,18 @@ ReaderDocument::from_file(const std::string& filename)
 
   std::ifstream in;
   in.open(filename);
-  if (!in.good()) {
+  if (!in.good())
+  {
     std::stringstream msg;
     msg << "Parser problem: Couldn't open file '" << filename << "'.";
     throw std::runtime_error(msg.str());
-  } else {
-    return from_stream(in, filename);
   }
-  in.close();
+  else
+  {
+    ReaderDocument doc = from_stream(in, filename);
+    in.close();
+    return doc;
+  }
 }
 
 ReaderDocument::ReaderDocument(const std::string& filename, sexp::Value sx) :
