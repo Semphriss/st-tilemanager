@@ -53,10 +53,10 @@ TileMaskSelector::get_col(short mask)
 TileMaskSelector::TileMaskSelector(Window& window) :
   Scene(window),
   m_current_tile(0),
-  m_btn_next_tile("Next tile", [this](int){ this->next_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_prev_tile("Prev. tile", [this](int){ this->prev_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_go_back("Go back", [this](int){ change_scene(std::make_unique<TileSelector>(this->m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TilePairings>(this->m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr)
+  m_btn_next_tile("Next tile", [this](int){ next_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_prev_tile("Prev. tile", [this](int){ prev_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_go_back("Go back", [this](int){ change_scene(std::make_unique<TileSelector>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TilePairings>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
   resize_elements();
 }

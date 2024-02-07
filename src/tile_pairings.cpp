@@ -52,10 +52,10 @@ TilePairings::TilePairings(Window& window) :
   m_current_tile(0),
   m_current_match(0),
   m_match_direction(0),
-  m_btn_yes("Yes", [this](int){ this->yes(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_no("No", [this](int){ this->no(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(this->m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_next("Next step", [this](int){  }, 0xff, true, 100, Rect(), theme_set, nullptr)
+  m_btn_yes("Yes", [this](int){ yes(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_no("No", [this](int){ no(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_next("Next step", [this](int){}, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
   resize_elements();
 }
