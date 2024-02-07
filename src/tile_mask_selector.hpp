@@ -36,7 +36,7 @@ private:
 
 public:
   TileMaskSelector() = delete;
-  TileMaskSelector(Window& window, const std::vector<Tile>& tiles, Texture& tiles_texture);
+  TileMaskSelector(Window& window);
   virtual ~TileMaskSelector() = default;
 
   virtual void event(const SDL_Event& event) override;
@@ -50,8 +50,6 @@ private:
   void resize_elements();
 
 private:
-  std::vector<Tile> m_tiles;
-  Texture& m_tiles_texture;
   int m_current_tile;
   ButtonLabel m_btn_next_tile;
   ButtonLabel m_btn_prev_tile;

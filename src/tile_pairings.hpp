@@ -30,7 +30,7 @@ class TilePairings :
 {
 public:
   TilePairings() = delete;
-  TilePairings(Window& window, const std::vector<Tile>& tiles, Texture& tiles_texture);
+  TilePairings(Window& window);
   virtual ~TilePairings() = default;
 
   virtual void event(const SDL_Event& event) override;
@@ -47,8 +47,6 @@ private:
   void resize_elements();
 
 private:
-  std::vector<Tile> m_tiles;
-  Texture& m_tiles_texture;
   int m_current_tile;
   int m_current_match;
   int m_match_direction;

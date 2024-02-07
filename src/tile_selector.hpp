@@ -48,12 +48,7 @@ private:
 
 private:
   Vector m_mouse_pos;
-
-  std::vector<TileGroup> m_tilegroups;
-  TileGroup* m_tilegroup;
   int m_current_tile;
-
-  std::vector<Tile> m_tiles;
 
   Scrollbar m_tiles_scrollbar;
   ButtonLabel m_btn_add_image;

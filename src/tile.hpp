@@ -25,19 +25,10 @@
 #include "util/rect.hpp"
 
 class Texture;
-struct TileGroup;
 
 struct Tile
 {
-  Tile(uint32_t id_, const Rect& src_rect) :
-    id(id_),
-    srcrect(src_rect),
-    mask_up(1),
-    mask_left(1),
-    mask_down(1),
-    mask_right(1),
-    non_solid(false)
-  {}
+  Tile(uint32_t id, const Rect& srcrect);
 
   // Step 1
   uint32_t id;
@@ -64,14 +55,8 @@ struct Tile
 struct TileGroup
 {
   TileGroup(unsigned int w, unsigned int h,
-            std::vector<Tile> tiles_, Texture* texture_,
-            const Rect& region_) :
-    width(w),
-    height(h),
-    tiles(std::move(tiles_)),
-    texture(texture_),
-    region(region_)
-  {}
+            std::vector<Tile> tiles, Texture* texture,
+            const Rect& region);
 
   const unsigned int width;
   const unsigned int height;
@@ -80,5 +65,10 @@ struct TileGroup
   Texture* const texture;
   const Rect region;
 };
+
+extern std::vector<TileGroup> g_tilegroups;
+extern TileGroup* g_tilegroup;
+
+extern std::vector<Tile> g_selected_tiles;
 
 #endif
