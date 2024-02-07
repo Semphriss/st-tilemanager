@@ -24,6 +24,7 @@
 #include "video/drawing_context.hpp"
 #include "video/window.hpp"
 
+#include "supertux/tile_set_parser.hpp"
 #include "tile_mask_selector.hpp"
 
 static const Control::ThemeSet theme_set = ([]{
@@ -67,13 +68,23 @@ static const Control::ThemeSet scrollbar_theme_set = ([]{
 TileSelector::TileSelector(Window& window, const std::vector<Tile>& tiles) :
   Scene(window),
   m_mouse_pos(),
-  m_textures(),
-  m_current_texture(-1),
+  m_tilegroups(),
+  m_tilegroup(),
+  m_current_tile(-1),
   m_tiles(tiles),
   m_tiles_scrollbar(nullptr, window.get_size().h, 0.f, false, 0xff, 100, Rect(),
                     scrollbar_theme_set, nullptr),
-  m_btn_add_image("Open image", [this](int){ this->add_image(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TileMaskSelector>(this->m_window, this->m_tiles)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_add_image("Open tileset", [this](int){ add_tileset(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_next_step("Next step", [this](int)
+    {
+      if (!m_tilegroup || m_tiles.empty())
+      {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Some tiles must exist for autotiles to be created", nullptr);
+        return;
+      }
+      change_scene(std::make_unique<TileMaskSelector>(m_window, m_tiles, *m_tilegroup->texture));
+    },
+    0xff, true, 100, Rect(), theme_set, nullptr),
   m_dragging(false),
   m_camera(0.f, 0.f),
   m_last_folder()
@@ -95,10 +106,27 @@ TileSelector::event(const SDL_Event& event)
       break;
 
     case SDL_MOUSEMOTION:
+    {
       m_mouse_pos = Vector(event.motion.x, event.motion.y);
       if (m_dragging)
         m_camera += Vector(event.motion.xrel, event.motion.yrel);
-      break;
+
+      /** Determine hovered tile */
+      if (m_tilegroup)
+      {
+        auto ws = (m_window.get_size().vector() - Vector(32, 32)).size();
+        auto& t = *m_tilegroup->texture;
+        auto s = m_tilegroup->region.size();
+        const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
+        if (trect.clipped(Rect(0.f, 0.f, ws.w - (m_tiles_scrollbar.is_valid() ? 37.f : 32.f), ws.h - 32.f)).contains(m_mouse_pos))
+        {
+          const Vector tile_pos = ((m_mouse_pos - trect.top_lft()) / 32.f).floor();
+          m_current_tile = static_cast<int>(tile_pos.y) * static_cast<int>(s.w / 32.f) +
+                           static_cast<int>(tile_pos.x);
+        }
+      }
+    }
+    break;
 
     case SDL_MOUSEBUTTONDOWN:
       if (event.button.button == SDL_BUTTON_RIGHT &&
@@ -113,29 +141,24 @@ TileSelector::event(const SDL_Event& event)
       {
         case SDL_BUTTON_LEFT:
         {
-          if (m_current_texture < 0)
+          if (!m_tilegroup || m_current_tile < 0 || !m_tilegroup->tiles[m_current_tile].id)
             return;
 
           auto ws = (m_window.get_size().vector() - Vector(32, 32)).size();
-          auto& t = m_window.load_texture(m_textures[m_current_texture]);
-          auto s = t.get_size();
-          Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
+          auto& t = *m_tilegroup->texture;
+          auto s = m_tilegroup->region.size();
+          const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
           if (trect.contains(m_mouse_pos))
           {
-            Vector tl = ((m_mouse_pos - trect.top_lft()) / 32.f).floor() * 32.f;
-
-            std::string texture = m_textures[m_current_texture];
-            Rect srcrect = Rect(tl, Size(32, 32));
-
             for (const auto& t : m_tiles)
-              if (t.texture_file == texture && (t.srcrect.top_lft() - srcrect.top_lft()).length() < 0.1f)
+              if (t.id == m_tilegroup->tiles[m_current_tile].id)
                 return;
 
-            m_tiles.push_back(Tile{texture, srcrect, 0});
+            m_tiles.push_back(m_tilegroup->tiles[m_current_tile]);
             m_tiles_scrollbar.set_total(m_tiles.size() * 32.f);
           }
         }
-          break;
+        break;
 
         case SDL_BUTTON_RIGHT:
         {
@@ -153,7 +176,7 @@ TileSelector::event(const SDL_Event& event)
             }
           }
         }
-          break;
+        break;
 
         default:
           break;
@@ -197,29 +220,35 @@ TileSelector::draw() const
   auto ws = (m_window.get_size().vector() - Vector(32, 32)).size();
   r.draw_filled_rect(ws, Color(.15f, .15f, .15f), Renderer::Blend::NONE);
 
-  if (m_current_texture > -1)
+  if (m_tilegroup)
   {
-    auto& t = m_window.load_texture(m_textures[m_current_texture]);
-    auto s = t.get_size();
+    auto& t = *m_tilegroup->texture;
+    auto s = m_tilegroup->region.size();
 
-    Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
+    const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
     r.draw_filled_rect(trect, Color(0.f, 0.f, 0.f), Renderer::Blend::NONE);
-    r.draw_texture(t, s, trect, 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND);
-    if (trect.clipped(Rect(0.f, 0.f, ws.w - (m_tiles_scrollbar.is_valid() ? 37.f : 32.f), ws.h - 32.f)).contains(m_mouse_pos))
+
+    // Main tiles texture
+    r.draw_texture(t, m_tilegroup->region, trect, 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND);
+
+    // Tile hover
+    if (m_tilegroup->tiles[m_current_tile].id &&
+        trect.clipped(Rect(0.f, 0.f, ws.w - (m_tiles_scrollbar.is_valid() ? 37.f : 32.f), ws.h - 32.f)).contains(m_mouse_pos))
     {
       Vector tl = ((m_mouse_pos - trect.top_lft()) / 32.f).floor() * 32.f + trect.top_lft();
       r.draw_filled_rect(Rect(tl, Size(32.f, 32.f)), Color(1.f, 1.f, 1.f, .25f), Renderer::Blend::BLEND);
     }
-  }
 
-  r.draw_filled_rect(Rect(0.f, ws.h, ws.w, ws.h + 32.f), Color(.2f, .2f, .2f), Renderer::Blend::NONE);
-  r.draw_filled_rect(Rect(ws.w, 0.f, ws.w + 32.f, ws.h + 32.f), Color(.2f, .2f, .2f), Renderer::Blend::NONE);
+    // Selected tiles bar
+    r.draw_filled_rect(Rect(0.f, ws.h, ws.w, ws.h + 32.f), Color(.2f, .2f, .2f), Renderer::Blend::NONE);
+    r.draw_filled_rect(Rect(ws.w, 0.f, ws.w + 32.f, ws.h + 32.f), Color(.2f, .2f, .2f), Renderer::Blend::NONE);
 
-  Rect tile_rect(ws.w, 0.f - m_tiles_scrollbar.get_progress(), ws.w + 32.f, 32.f - m_tiles_scrollbar.get_progress());
-  for (const auto& t : m_tiles)
-  {
-    r.draw_texture(m_window.load_texture(t.texture_file), t.srcrect, tile_rect, 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND);
-    tile_rect.move(Vector(0, 32));
+    Rect tile_rect(ws.w, 0.f - m_tiles_scrollbar.get_progress(), ws.w + 32.f, 32.f - m_tiles_scrollbar.get_progress());
+    for (const auto& t : m_tiles)
+    {
+      r.draw_texture(*m_tilegroup->texture, t.srcrect, tile_rect, 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND);
+      tile_rect.move(Vector(0, 32));
+    }
   }
 
   r.draw_texture(*ctrls, m_window.get_size(), m_window.get_size(), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND);
@@ -228,29 +257,26 @@ TileSelector::draw() const
 }
 
 void
-TileSelector::add_image()
+TileSelector::add_tileset()
 {
-  auto files = pfd::open_file("Select SuperTux version", m_last_folder, { "PNG", "*.png" }, pfd::opt::none).result();
+  auto files = pfd::open_file("Select SuperTux tileset", m_last_folder, { "SuperTux Tileset", "*.strf" }, pfd::opt::none).result();
   if (files.size() != 1)
     return;
 
-  m_last_folder = files[0];
+  m_tilegroups.clear();
+  m_tiles.clear();
+  TileSetParser parser(m_tilegroups, m_last_folder, m_window);
+  parser.parse();
 
-  auto& t = m_window.load_texture(files[0]);
-  Size s = t.get_size();
-  int width = static_cast<int>(s.w), height = static_cast<int>(s.h);
-
-  if (width % 32 != 0 || height % 32 != 0)
+  if (m_tilegroups.empty())
   {
-    SDL_ShowSimpleMessageBox(SDL_MessageBoxFlags::SDL_MESSAGEBOX_ERROR, "Error",
-                    ("Image files must be based on 32x32 tiles. Image size: " +
-                    std::to_string(width) + "x" + std::to_string(height)).c_str(),
-                    nullptr);
+    SDL_ShowSimpleMessageBox(SDL_MessageBoxFlags::SDL_MESSAGEBOX_INFORMATION, "Information",
+                             "No tilegroups imported.", nullptr);
     return;
   }
 
-  m_textures.push_back(files[0]);
-  m_current_texture = m_textures.size() - 1;
+  m_tilegroup = &m_tilegroups.front();
+  m_current_tile = m_tilegroup->tiles.size() - 1;
   m_camera = Vector();
 }
 

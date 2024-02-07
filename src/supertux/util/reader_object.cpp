@@ -1,5 +1,5 @@
-//  SuperTux Tile Manager - A utility for SuperTux to manage tiles
-//  Copyright (C) 2021 Semphris <semphris@protonmail.com>
+//  SuperTux
+//  Copyright (C) 2015 Ingo Ruhnke <grumbel@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -14,15 +14,34 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HEADER_STTILEMAN_MAIN_HPP
-#define _HEADER_STTILEMAN_MAIN_HPP
+#include "supertux/util/reader_object.hpp"
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <assert.h>
+#include <sexp/value.hpp>
+#include <stdexcept>
 
-#include "scene.hpp"
+#include "supertux/util/reader_error.hpp"
+#include "supertux/util/reader_mapping.hpp"
 
-void change_scene(std::unique_ptr<Scene> scene);
+ReaderObject::ReaderObject(const ReaderDocument& doc, const sexp::Value& sx) :
+  m_doc(doc),
+  m_sx(sx)
+{
+}
 
-#endif
+std::string
+ReaderObject::get_name() const
+{
+  assert_array_size_ge(m_doc, m_sx, 1);
+  assert_is_symbol(m_doc, m_sx.as_array()[0]);
+
+  return m_sx.as_array()[0].as_string();
+}
+
+ReaderMapping
+ReaderObject::get_mapping() const
+{
+  return ReaderMapping(m_doc, m_sx);
+}
+
+/* EOF */

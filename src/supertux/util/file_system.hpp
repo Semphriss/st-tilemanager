@@ -1,5 +1,5 @@
-//  SuperTux Tile Manager - A utility for SuperTux to manage tiles
-//  Copyright (C) 2021 Semphris <semphris@protonmail.com>
+//  SuperTux
+//  Copyright (C) 2006 Matthias Braun <matze@braunis.de>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -14,15 +14,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HEADER_STTILEMAN_MAIN_HPP
-#define _HEADER_STTILEMAN_MAIN_HPP
+#ifndef HEADER_SUPERTUX_UTIL_FILE_SYSTEM_HPP
+#define HEADER_SUPERTUX_UTIL_FILE_SYSTEM_HPP
 
-#include <memory>
 #include <string>
-#include <vector>
 
-#include "scene.hpp"
+namespace FileSystem {
 
-void change_scene(std::unique_ptr<Scene> scene);
+/** returns the path of the directory the file is in */
+std::string dirname(const std::string& filename);
+
+/** join two filenames join("foo", "bar") -> "foo/bar" */
+std::string join(const std::string& lhs, const std::string& rhs);
+
+} // namespace FileSystem
 
 #endif
+
+/* EOF */

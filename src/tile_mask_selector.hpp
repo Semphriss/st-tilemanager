@@ -26,7 +26,7 @@
 #include "util/color.hpp"
 #include "util/rect.hpp"
 
-#include "main.hpp"
+#include "tile.hpp"
 
 class TileMaskSelector :
   public Scene
@@ -36,11 +36,11 @@ private:
 
 public:
   TileMaskSelector() = delete;
-  TileMaskSelector(Window& window, const std::vector<Tile>& tiles);
+  TileMaskSelector(Window& window, const std::vector<Tile>& tiles, Texture& tiles_texture);
   virtual ~TileMaskSelector() = default;
 
   virtual void event(const SDL_Event& event) override;
-  virtual void update(float dt_sec) override;
+  virtual void update(float dt_sec) override {}
   virtual void draw() const override;
 
   void next_tile();
@@ -51,6 +51,7 @@ private:
 
 private:
   std::vector<Tile> m_tiles;
+  Texture& m_tiles_texture;
   int m_current_tile;
   ButtonLabel m_btn_next_tile;
   ButtonLabel m_btn_prev_tile;

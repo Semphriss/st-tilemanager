@@ -50,14 +50,15 @@ TileMaskSelector::get_col(short mask)
   return Color((mask & 0x1) ? .8f : .2f, (mask & 0x2) ? .8f : .2f, (mask & 0x4) ? .8f : .2f);
 }
 
-TileMaskSelector::TileMaskSelector(Window& window, const std::vector<Tile>& tiles) :
+TileMaskSelector::TileMaskSelector(Window& window, const std::vector<Tile>& tiles, Texture& tiles_texture) :
   Scene(window),
   m_tiles(tiles),
+  m_tiles_texture(tiles_texture),
   m_current_tile(0),
   m_btn_next_tile("Next tile", [this](int){ this->next_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_prev_tile("Prev. tile", [this](int){ this->prev_tile(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_go_back("Go back", [this](int){ change_scene(std::make_unique<TileSelector>(this->m_window, this->m_tiles)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TilePairings>(this->m_window, this->m_tiles)); }, 0xff, true, 100, Rect(), theme_set, nullptr)
+  m_btn_next_step("Next step", [this](int){ change_scene(std::make_unique<TilePairings>(this->m_window, this->m_tiles, this->m_tiles_texture)); }, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
   resize_elements();
 }
@@ -110,16 +111,6 @@ TileMaskSelector::event(const SDL_Event& event)
 }
 
 void
-TileMaskSelector::update(float dt_sec)
-{
-  if (m_tiles.size() < 1)
-  {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Some tiles must exist for autotiles to be created", nullptr);
-    change_scene(std::make_unique<TileSelector>(this->m_window, this->m_tiles));
-  }
-}
-
-void
 TileMaskSelector::draw() const
 {
   auto& r = m_window.get_renderer();
@@ -134,7 +125,7 @@ TileMaskSelector::draw() const
 
   Vector mid = m_window.get_size() / 2.f;
   Rect tile_rect = Rect(mid - Vector(16.f, 16.f), Size(32.f, 32.f));
-  const auto& t = m_window.load_texture(m_tiles[m_current_tile].texture_file);
+  const auto& t = m_tiles_texture;
   const auto& src = m_tiles[m_current_tile].srcrect;
   dc.draw_texture(t, src, tile_rect, 0.f, m_tiles[m_current_tile].non_solid ? Color(1.f, .5f, .5f) : Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
   dc.draw_filled_rect(tile_rect.moved(Vector(32.f, 0.f)), get_col(m_tiles[m_current_tile].mask_right), Renderer::Blend::BLEND, 1);

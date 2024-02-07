@@ -25,6 +25,7 @@
 #include "video/renderer.hpp"
 #include "video/window.hpp"
 
+#include "main.hpp"
 #include "tile_mask_selector.hpp"
 
 static const Control::ThemeSet theme_set = ([]{
@@ -46,15 +47,16 @@ static const Control::ThemeSet theme_set = ([]{
   return ts;
 })();
 
-TilePairings::TilePairings(Window& window, const std::vector<Tile>& tiles) :
+TilePairings::TilePairings(Window& window, const std::vector<Tile>& tiles, Texture& tiles_texture) :
   Scene(window),
   m_tiles(tiles),
+  m_tiles_texture(tiles_texture),
   m_current_tile(0),
   m_current_match(0),
   m_match_direction(0),
   m_btn_yes("Yes", [this](int){ this->yes(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_no("No", [this](int){ this->no(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(this->m_window, this->m_tiles)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(this->m_window, this->m_tiles, this->m_tiles_texture)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_next("Next step", [this](int){  }, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
   resize_elements();
@@ -122,15 +124,13 @@ TilePairings::draw() const
   }
 
   {
-    const auto& t = m_window.load_texture(m_tiles[m_current_tile].texture_file);
     const auto& src = m_tiles[m_current_tile].srcrect;
-    dc.draw_texture(t, src, tile_rect.moved(-delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
+    dc.draw_texture(m_tiles_texture, src, tile_rect.moved(-delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
   }
 
   {
-    const auto& t = m_window.load_texture(m_tiles[m_current_match].texture_file);
     const auto& src = m_tiles[m_current_match].srcrect;
-    dc.draw_texture(t, src, tile_rect.moved(delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
+    dc.draw_texture(m_tiles_texture, src, tile_rect.moved(delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
   }
 
   dc.render();

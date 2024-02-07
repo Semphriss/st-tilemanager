@@ -27,6 +27,7 @@
 #include "video/texture.hpp"
 
 #include "main.hpp"
+#include "tile.hpp"
 
 class TileSelector :
   public Scene
@@ -40,18 +41,23 @@ public:
   virtual void update(float dt_sec) override;
   virtual void draw() const override;
 
-  void add_image();
+  void add_tileset();
 
 private:
   void resize_elements();
 
 private:
   Vector m_mouse_pos;
-  std::vector<std::string> m_textures;
-  int m_current_texture;
+
+  std::vector<TileGroup> m_tilegroups;
+  TileGroup* m_tilegroup;
+  int m_current_tile;
+
   std::vector<Tile> m_tiles;
+
   Scrollbar m_tiles_scrollbar;
   ButtonLabel m_btn_add_image;
+
   ButtonLabel m_btn_next_step;
   bool m_dragging;
   Vector m_camera;
