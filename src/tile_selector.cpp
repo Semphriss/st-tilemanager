@@ -65,7 +65,7 @@ static const Control::ThemeSet scrollbar_theme_set = ([]{
   return ts;
 })();
 
-TileSelector::TileSelector(Window& window, const std::vector<Tile>& tiles) :
+TileSelector::TileSelector(Window& window) :
   Scene(window),
   m_mouse_pos(),
   m_current_tile(-1),

@@ -34,7 +34,7 @@ class TileSelector :
 {
 public:
   TileSelector() = delete;
-  TileSelector(Window& window, const std::vector<Tile>& tiles = {});
+  TileSelector(Window& window);
   virtual ~TileSelector() = default;
 
   virtual void event(const SDL_Event& event) override;
