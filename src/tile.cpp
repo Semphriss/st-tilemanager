@@ -33,9 +33,11 @@ Tile::Tile(uint32_t id_, const Rect& src_rect) :
   non_solid(false)
 {}
 
-TileGroup::TileGroup(unsigned int w, unsigned int h,
+TileGroup::TileGroup(const std::string& filename_,
+                     unsigned int w, unsigned int h,
                      std::vector<Tile> tiles_, Texture* texture_,
                      const Rect& region_) :
+  filename(filename_),
   width(w),
   height(h),
   tiles(std::move(tiles_)),

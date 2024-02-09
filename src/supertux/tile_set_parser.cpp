@@ -115,11 +115,12 @@ TileSetParser::parse_tiles(const ReaderMapping& reader)
   else
   {
     Texture* texture;
+    std::string file;
     Rect region;
     std::optional<ReaderMapping> textures_mapping;
     if (reader.get("image", textures_mapping) ||
         reader.get("images", textures_mapping))
-      texture = parse_imagespecs(*textures_mapping, region);
+      texture = parse_imagespecs(*textures_mapping, file, region);
 
     if (!texture)
       return;
@@ -147,12 +148,14 @@ TileSetParser::parse_tiles(const ReaderMapping& reader)
       tiles.push_back(Tile(ids[i], Rect(pos, Size(32.f, 32.f))));
     }
 
-    m_tilegroups.push_back(TileGroup(width, height, std::move(tiles), texture, region));
+    m_tilegroups.push_back(TileGroup(FileSystem::basename(file), width, height,
+                                     std::move(tiles), texture, region));
   }
 }
 
 Texture*
-TileSetParser::parse_imagespecs(const ReaderMapping& images_mapping, Rect& region) const
+TileSetParser::parse_imagespecs(const ReaderMapping& images_mapping,
+                                std::string& file, Rect& region) const
 {
   // (images "foo.png" "foo.bar" ...)
   // (images (region "foo.png" 0 0 32 32))
@@ -161,7 +164,7 @@ TileSetParser::parse_imagespecs(const ReaderMapping& images_mapping, Rect& regio
   {
     if (iter.is_string())
     {
-      std::string file = iter.as_string_item();
+      file = iter.as_string_item();
       Texture& texture = m_window.load_texture(FileSystem::join(m_tiles_path, file));
       region = Rect(Vector(0.f, 0.f), texture.get_size());
       return &texture;
@@ -180,7 +183,7 @@ TileSetParser::parse_imagespecs(const ReaderMapping& images_mapping, Rect& regio
       }
       else
       {
-        const std::string file = arr[1].as_string();
+        file = arr[1].as_string();
         const int x = arr[2].as_int();
         const int y = arr[3].as_int();
         const int w = arr[4].as_int();

@@ -22,6 +22,7 @@
 #include "video/renderer.hpp"
 #include "video/window.hpp"
 
+#include "main.hpp"
 #include "tile_pairings.hpp"
 #include "tile_selector.hpp"
 

@@ -43,7 +43,8 @@ public:
 
 private:
   void parse_tiles(const ReaderMapping& reader);
-  Texture* parse_imagespecs(const ReaderMapping& images_mapping, Rect& region) const;
+  Texture* parse_imagespecs(const ReaderMapping& images_mapping,
+                            std::string& file, Rect& region) const;
 
 private:
   TileSetParser(const TileSetParser&) = delete;

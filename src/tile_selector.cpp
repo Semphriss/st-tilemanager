@@ -24,6 +24,7 @@
 #include "video/drawing_context.hpp"
 #include "video/window.hpp"
 
+#include "main.hpp"
 #include "supertux/tile_set_parser.hpp"
 #include "tile_mask_selector.hpp"
 
@@ -52,15 +53,47 @@ static const Control::ThemeSet scrollbar_theme_set = ([]{
   t.fg_color = Color(.75f, .75f, .8f);
   t.bg_blend = Renderer::Blend::BLEND;
   t.bg_color = Color();
-  t.font = "../data/fonts/SuperTux-Medium.ttf";
-  t.fontsize = 18;
 
   Control::ThemeSet ts{t, t, t, t, t};
   ts.disabled.fg_color = Color(.5f, .5f, .55f);
   ts.disabled.bg_color = Color(.2f, .2f, .2f);
   ts.hover.fg_color = Color(.8f, .8f, .85f);
-  ts.focus.fg_color = Color(.85f, .85f, .9f);
   ts.active.fg_color = Color(.9f, .9f, .95f);
+
+  return ts;
+})();
+
+static const Control::ThemeSet list_theme_set = ([]{
+  Control::Theme t;
+  t.bg_blend = Renderer::Blend::BLEND;
+  t.bg_color = Color(.3f, .3f, .3f);
+  t.fg_blend = Renderer::Blend::BLEND;
+  t.fg_color = Color(1.f, 1.f, 1.f);
+  t.font = "../data/fonts/SuperTux-Medium.ttf";
+  t.fontsize = 13;
+
+  Control::ThemeSet ts{t, t, t, t, t};
+  ts.disabled.bg_color = Color(.5f, .5f, .55f);
+  ts.disabled.fg_color = Color(.2f, .2f, .2f);
+  ts.hover.bg_color = Color(.7f, .7f, .75f);
+  ts.focus.bg_color = Color(.6f, .6f, .65f);
+  ts.active.bg_color = Color(.9f, .9f, .95f);
+
+  return ts;
+})();
+
+static const Control::ThemeSet list_scrollbar_theme_set = ([]{
+  Control::Theme t;
+  t.bg_blend = Renderer::Blend::BLEND;
+  t.bg_color = Color(.3f, .3f, .3f);
+  t.fg_blend = Renderer::Blend::BLEND;
+  t.fg_color = Color(.6f, .6f, .6f);
+
+  Control::ThemeSet ts{t, t, t, t, t};
+  ts.disabled.fg_color = Color(.5f, .5f, .55f);
+  ts.disabled.bg_color = Color(.2f, .2f, .2f);
+  ts.hover.fg_color = Color(.8f, .8f, .8f);
+  ts.active.fg_color = Color(.9f, .9f, .9f);
 
   return ts;
 })();
@@ -69,9 +102,10 @@ TileSelector::TileSelector(Window& window) :
   Scene(window),
   m_mouse_pos(),
   m_current_tile(-1),
-  m_tiles_scrollbar(nullptr, window.get_size().h, 0.f, false, 0xff, 100, Rect(),
+  m_tilegroups_list(30.f, list_scrollbar_theme_set, 100, Rect(), list_theme_set, nullptr),
+  m_tiles_scrollbar(nullptr, window.get_size().h - 32.f, 0.f, false, 0xff, 100, Rect(),
                     scrollbar_theme_set, nullptr),
-  m_btn_add_image("Open tileset", [this](int){ add_tileset(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_add_tileset("Open tileset", [this](int){ add_tileset(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
   m_btn_next_step("Next step", [this](int)
     {
       if (!g_tilegroup || g_selected_tiles.empty())
@@ -86,14 +120,26 @@ TileSelector::TileSelector(Window& window) :
   m_camera(0.f, 0.f),
   m_last_folder()
 {
+  for (TileGroup& tilegroup : g_tilegroups)
+    m_tilegroups_list.add_item(tilegroup.filename, &tilegroup);
+
+  m_tilegroups_list.set_on_changed([this](int, TileGroup* const* tilegroup)
+    {
+      if (!tilegroup) return;
+
+      g_tilegroup = *tilegroup;
+      g_selected_tiles.clear();
+      m_current_tile = g_tilegroup->tiles.size() - 1;
+    });
+
   resize_elements();
 }
 
 void
 TileSelector::event(const SDL_Event& event)
 {
-  if (m_tiles_scrollbar.is_valid() && m_tiles_scrollbar.event(event)
-      || m_btn_add_image.event(event) || m_btn_next_step.event(event))
+  if (m_tilegroups_list.event(event) || (m_tiles_scrollbar.is_valid() && m_tiles_scrollbar.event(event))
+      || m_btn_add_tileset.event(event) || m_btn_next_step.event(event))
     return;
 
   switch (event.type)
@@ -111,7 +157,7 @@ TileSelector::event(const SDL_Event& event)
       /** Determine hovered tile */
       if (g_tilegroup)
       {
-        auto ws = (m_window.get_size().vector() - Vector(32, 32)).size();
+        auto ws = (m_window.get_size().vector() - Vector(32 - m_window.get_size().w / 4, 32)).size();
         auto& t = *g_tilegroup->texture;
         auto s = g_tilegroup->region.size();
         const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
@@ -141,7 +187,7 @@ TileSelector::event(const SDL_Event& event)
           if (!g_tilegroup || m_current_tile < 0 || !g_tilegroup->tiles[m_current_tile].id)
             return;
 
-          auto ws = (m_window.get_size().vector() - Vector(32, 32)).size();
+          auto ws = (m_window.get_size().vector() - Vector(32 - m_window.get_size().w / 4, 32)).size();
           auto& t = *g_tilegroup->texture;
           auto s = g_tilegroup->region.size();
           const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
@@ -206,10 +252,11 @@ TileSelector::draw() const
 
   auto ctrls = m_window.create_texture(m_window.get_size());
   DrawingContext dc(r);
+  m_tilegroups_list.draw(dc);
   if (m_tiles_scrollbar.is_valid())
     m_tiles_scrollbar.draw(dc);
   m_btn_next_step.draw(dc);
-  m_btn_add_image.draw(dc);
+  m_btn_add_tileset.draw(dc);
   dc.render(ctrls.get());
 
   r.start_draw();
@@ -219,10 +266,11 @@ TileSelector::draw() const
 
   if (g_tilegroup)
   {
+    auto ws_tiles = m_window.get_size().vector() - Vector(32 - m_window.get_size().w / 4, 32);
     auto& t = *g_tilegroup->texture;
     auto s = g_tilegroup->region.size();
 
-    const Rect trect = Rect(s).move(Vector(ws) / 2 - Vector(s) / 2).move(m_camera);
+    const Rect trect = Rect(s).move(ws_tiles / 2 - Vector(s) / 2).move(m_camera);
     r.draw_filled_rect(trect, Color(0.f, 0.f, 0.f), Renderer::Blend::NONE);
 
     // Main tiles texture
@@ -260,8 +308,12 @@ TileSelector::add_tileset()
   if (files.size() != 1)
     return;
 
-  g_tilegroups.clear();
+
   g_selected_tiles.clear();
+  g_tilegroups.clear();
+  g_tilegroup = nullptr;
+  m_tilegroups_list.clear_items();
+
   TileSetParser parser(g_tilegroups, m_last_folder, m_window);
   parser.parse();
 
@@ -272,15 +324,18 @@ TileSelector::add_tileset()
     return;
   }
 
-  g_tilegroup = &g_tilegroups.front();
-  m_current_tile = g_tilegroup->tiles.size() - 1;
+  for (TileGroup& tilegroup : g_tilegroups)
+    m_tilegroups_list.add_item(tilegroup.filename, &tilegroup);
+
   m_camera = Vector();
 }
 
 void
 TileSelector::resize_elements()
 {
+  m_tilegroups_list.get_rect() = Rect(0.f, 0.f, m_window.get_size().w / 4.f, m_window.get_size().h - 32.f);
+  m_tilegroups_list.update_scrollbar_rect();
   m_tiles_scrollbar.get_rect() = Rect(m_window.get_size().w - 37.f, 0.f, m_window.get_size().w - 32.f, m_window.get_size().h);
-  m_btn_add_image.get_rect() = Rect(0.f, m_window.get_size().h - 32.f, m_window.get_size().w / 2.f - 16.f, m_window.get_size().h);
+  m_btn_add_tileset.get_rect() = Rect(0.f, m_window.get_size().h - 32.f, m_window.get_size().w / 2.f - 16.f, m_window.get_size().h);
   m_btn_next_step.get_rect() = Rect(m_window.get_size().w / 2.f - 16.f, m_window.get_size().h - 32.f, m_window.get_size().w - 32.f, m_window.get_size().h);
 }

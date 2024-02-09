@@ -24,6 +24,9 @@ namespace FileSystem {
 /** returns the path of the directory the file is in */
 std::string dirname(const std::string& filename);
 
+/** returns the name of the file */
+std::string basename(const std::string& filename);
+
 /** join two filenames join("foo", "bar") -> "foo/bar" */
 std::string join(const std::string& lhs, const std::string& rhs);
 

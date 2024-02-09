@@ -54,9 +54,12 @@ struct Tile
 
 struct TileGroup
 {
-  TileGroup(unsigned int w, unsigned int h,
+  TileGroup(const std::string& filename,
+            unsigned int w, unsigned int h,
             std::vector<Tile> tiles, Texture* texture,
             const Rect& region);
+
+  const std::string filename;
 
   const unsigned int width;
   const unsigned int height;
