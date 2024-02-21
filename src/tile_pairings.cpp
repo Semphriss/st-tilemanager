@@ -25,6 +25,7 @@
 #include "video/renderer.hpp"
 #include "video/window.hpp"
 
+#include "main.hpp"
 #include "tile_mask_selector.hpp"
 
 static const Control::ThemeSet theme_set = ([]{
@@ -46,16 +47,15 @@ static const Control::ThemeSet theme_set = ([]{
   return ts;
 })();
 
-TilePairings::TilePairings(Window& window, const std::vector<Tile>& tiles) :
+TilePairings::TilePairings(Window& window) :
   Scene(window),
-  m_tiles(tiles),
   m_current_tile(0),
   m_current_match(0),
   m_match_direction(0),
-  m_btn_yes("Yes", [this](int){ this->yes(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_no("No", [this](int){ this->no(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(this->m_window, this->m_tiles)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
-  m_btn_next("Next step", [this](int){  }, 0xff, true, 100, Rect(), theme_set, nullptr)
+  m_btn_yes("Yes", [this](int){ yes(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_no("No", [this](int){ no(); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_prev("Go back", [this](int){ change_scene(std::make_unique<TileMaskSelector>(m_window)); }, 0xff, true, 100, Rect(), theme_set, nullptr),
+  m_btn_next("Next step", [this](int){}, 0xff, true, 100, Rect(), theme_set, nullptr)
 {
   resize_elements();
 }
@@ -122,15 +122,13 @@ TilePairings::draw() const
   }
 
   {
-    const auto& t = m_window.load_texture(m_tiles[m_current_tile].texture_file);
-    const auto& src = m_tiles[m_current_tile].srcrect;
-    dc.draw_texture(t, src, tile_rect.moved(-delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
+    const auto& src = g_selected_tiles[m_current_tile].srcrect;
+    dc.draw_texture(*g_tilegroup->texture, src, tile_rect.moved(-delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
   }
 
   {
-    const auto& t = m_window.load_texture(m_tiles[m_current_match].texture_file);
-    const auto& src = m_tiles[m_current_match].srcrect;
-    dc.draw_texture(t, src, tile_rect.moved(delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
+    const auto& src = g_selected_tiles[m_current_match].srcrect;
+    dc.draw_texture(*g_tilegroup->texture, src, tile_rect.moved(delta), 0.f, Color(1.f, 1.f, 1.f), Renderer::Blend::BLEND, 1);
   }
 
   dc.render();
@@ -142,23 +140,23 @@ TilePairings::yes()
   switch (m_match_direction)
   {
     case 0:
-      m_tiles[m_current_tile].in_down.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].in_up.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].in_down.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].in_up.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 1:
-      m_tiles[m_current_tile].in_up.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].in_down.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].in_up.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].in_down.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 2:
-      m_tiles[m_current_tile].in_right.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].in_left.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].in_right.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].in_left.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 3:
-      m_tiles[m_current_tile].in_left.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].in_right.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].in_left.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].in_right.push_back(&g_selected_tiles[m_current_tile]);
       break;
   }
 
@@ -171,23 +169,23 @@ TilePairings::no()
   switch (m_match_direction)
   {
     case 0:
-      m_tiles[m_current_tile].ex_down.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].ex_up.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].ex_down.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].ex_up.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 1:
-      m_tiles[m_current_tile].ex_up.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].ex_down.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].ex_up.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].ex_down.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 2:
-      m_tiles[m_current_tile].ex_right.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].ex_left.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].ex_right.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].ex_left.push_back(&g_selected_tiles[m_current_tile]);
       break;
 
     case 3:
-      m_tiles[m_current_tile].ex_left.push_back(&m_tiles[m_current_match]);
-      m_tiles[m_current_match].ex_right.push_back(&m_tiles[m_current_tile]);
+      g_selected_tiles[m_current_tile].ex_left.push_back(&g_selected_tiles[m_current_match]);
+      g_selected_tiles[m_current_match].ex_right.push_back(&g_selected_tiles[m_current_tile]);
       break;
   }
 
@@ -199,12 +197,12 @@ TilePairings::next()
 {
   m_current_match++;
 
-  if (m_current_match >= m_tiles.size())
+  if (m_current_match >= g_selected_tiles.size())
   {
     m_current_match = 0;
     m_current_tile++;
 
-    if (m_current_tile >= m_tiles.size())
+    if (m_current_tile >= g_selected_tiles.size())
     {
       m_current_tile = 0;
 
@@ -221,8 +219,8 @@ TilePairings::next()
   };
 
   bool skip = false;
-  auto& tile = m_tiles[m_current_tile];
-  auto& match = m_tiles[m_current_match];
+  auto& tile = g_selected_tiles[m_current_tile];
+  auto& match = g_selected_tiles[m_current_match];
   switch(m_match_direction)
   {
     case 0:

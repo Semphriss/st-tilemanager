@@ -23,14 +23,14 @@
 
 #include "ui/button_label.hpp"
 
-#include "main.hpp"
+#include "tile.hpp"
 
 class TilePairings :
   public Scene
 {
 public:
   TilePairings() = delete;
-  TilePairings(Window& window, const std::vector<Tile>& tiles);
+  TilePairings(Window& window);
   virtual ~TilePairings() = default;
 
   virtual void event(const SDL_Event& event) override;
@@ -47,7 +47,6 @@ private:
   void resize_elements();
 
 private:
-  std::vector<Tile> m_tiles;
   int m_current_tile;
   int m_current_match;
   int m_match_direction;

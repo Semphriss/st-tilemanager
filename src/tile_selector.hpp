@@ -22,37 +22,39 @@
 #include <vector>
 
 #include "ui/button_label.hpp"
+#include "ui/listbox.hpp"
 #include "ui/scrollbar.hpp"
 #include "util/vector.hpp"
 #include "video/texture.hpp"
 
-#include "main.hpp"
+#include "tile.hpp"
 
 class TileSelector :
   public Scene
 {
 public:
   TileSelector() = delete;
-  TileSelector(Window& window, const std::vector<Tile>& tiles = {});
+  TileSelector(Window& window);
   virtual ~TileSelector() = default;
 
   virtual void event(const SDL_Event& event) override;
   virtual void update(float dt_sec) override;
   virtual void draw() const override;
 
-  void add_image();
+  void add_tileset();
 
 private:
   void resize_elements();
 
 private:
   Vector m_mouse_pos;
-  std::vector<std::string> m_textures;
-  int m_current_texture;
-  std::vector<Tile> m_tiles;
+  int m_current_tile;
+
+  Listbox<TileGroup*> m_tilegroups_list;
   Scrollbar m_tiles_scrollbar;
-  ButtonLabel m_btn_add_image;
+  ButtonLabel m_btn_add_tileset;
   ButtonLabel m_btn_next_step;
+
   bool m_dragging;
   Vector m_camera;
   std::string m_last_folder;

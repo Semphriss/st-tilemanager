@@ -1,5 +1,5 @@
-//  SuperTux Tile Manager - A utility for SuperTux to manage tiles
-//  Copyright (C) 2021 Semphris <semphris@protonmail.com>
+//  SuperTux
+//  Copyright (C) 2015 Ingo Ruhnke <grumbel@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -14,15 +14,34 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HEADER_STTILEMAN_MAIN_HPP
-#define _HEADER_STTILEMAN_MAIN_HPP
+#ifndef HEADER_SUPERTUX_UTIL_READER_OBJECT_HPP
+#define HEADER_SUPERTUX_UTIL_READER_OBJECT_HPP
 
-#include <memory>
 #include <string>
-#include <vector>
 
-#include "scene.hpp"
+namespace sexp {
+class Value;
+} // namespace sexp
 
-void change_scene(std::unique_ptr<Scene> scene);
+class ReaderDocument;
+class ReaderMapping;
+
+class ReaderObject final
+{
+public:
+  ReaderObject(const ReaderDocument& doc, const sexp::Value& sx);
+
+  std::string get_name() const;
+  ReaderMapping get_mapping() const;
+
+  const ReaderDocument& get_doc() const { return m_doc; }
+  const sexp::Value& get_sexp() const { return m_sx; }
+
+private:
+  const ReaderDocument& m_doc;
+  const sexp::Value& m_sx;
+};
 
 #endif
+
+/* EOF */
